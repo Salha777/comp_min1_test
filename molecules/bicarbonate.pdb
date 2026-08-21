@@ -1,0 +1,8 @@
+REMARK Bicarbonate HCO3-  (Raiteri et al. 2010/2015)
+REMARK C-O(double)=1.24A  C-O(single)=1.34A  O-H=0.97A
+ATOM      1  C   HCO     1       0.000   0.000   0.000  1.00  0.00           C
+ATOM      2  O1  HCO     1       1.240   0.000   0.000  1.00  0.00           O
+ATOM      3  O2  HCO     1      -0.670   1.160   0.000  1.00  0.00           O
+ATOM      4  O3  HCO     1      -0.670  -1.160   0.000  1.00  0.00           O
+ATOM      5  H1  HCO     1      -1.640  -1.160   0.000  1.00  0.00           H
+END

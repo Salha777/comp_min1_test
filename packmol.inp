@@ -1,0 +1,59 @@
+# =============================================================================
+# PACKMOL INPUT - STAGE 1 (70 C, pH ~9.0)
+# =============================================================================
+# Box: 5.0 nm cubic (50 A)
+#
+# CHARGE BALANCE CHECK:
+#   Positive: 75 x Mg2+(+2) = +150  |  75 x NH4+(+1) = +75   -> Total = +225
+#   Negative: 75 x SO4 2-(-2) = -150 | 5 x CO3 2-(-2) = -10  |
+#             65 x HCO3-(-1) = -65                            -> Total = -225
+#
+# Speciation note: pH 9.0 -> dominantly HCO3-, very low CO3 2-
+#   (Shifts from pH 10 baseline: 65 HCO3- / 5 CO3 2- instead of 25/25)
+# =============================================================================
+
+tolerance 2.0
+output    stage1_packed.pdb
+filetype  pdb
+
+# ---- SOLVENT ----------------------------------------------------------------
+structure molecules/water.pdb
+  number 4100
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure
+
+# ---- Mg2+ ------------------------------------------------------------------
+structure molecules/mg.pdb
+  number 75
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure
+
+# ---- Sulfate SO4 2- --------------------------------------------------------
+structure molecules/sulfate.pdb
+  number 75
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure
+
+# ---- Ammonium NH4+ ---------------------------------------------------------
+structure molecules/ammonium.pdb
+  number 75
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure
+
+# ---- Bicarbonate HCO3- (dominant at pH 9.0) --------------------------------
+structure molecules/bicarbonate.pdb
+  number 65
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure
+
+# ---- Carbonate CO3 2- (minor at pH 9.0) ------------------------------------
+structure molecules/carbonate.pdb
+  number 5
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure
+
+# ---- Ammonia NH3 (free aqueous) --------------------------------------------
+structure molecules/ammonia.pdb
+  number 110
+  inside box 2.0 2.0 2.0 48.0 48.0 48.0
+end structure

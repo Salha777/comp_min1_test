@@ -1,0 +1,215 @@
+# =============================================================================
+# LAMMPS INPUT — STAGE 1: 70°C (343.15 K), pH 9.0
+# Mg-HCO3-SO4 aqueous nucleation system
+# =============================================================================
+# Force fields:
+#   Water     : SPC/E
+#   Mg2+      : Li-Merz 12-6-4  [APPROX — see mg_o_table.dat + patch below]
+#   SO4 2-    : Cannon et al. 2014
+#   CO3/HCO3  : Raiteri et al. 2010
+#   NH4+/NH3  : OPLS-AA
+#
+# Hardware : Apocrita GPU node, LAMMPS + KOKKOS (CUDA)
+# Run via  : sbatch submit_stage1.sh
+# =============================================================================
+
+# --- Initialization -----------------------------------------------------------
+units           real
+atom_style      full
+boundary        p p p
+
+# --- Bonded styles declared BEFORE read_data: stage1.data carries Bond Coeffs /
+#     Angle Coeffs sections, and LAMMPS needs the style defined to parse them.
+#     (pair_style stays BELOW read_data — the data file no longer has a Pair Coeffs
+#     section; pairs are set via hybrid/overlay further down.) ---
+bond_style      harmonic
+angle_style     harmonic
+
+# --- Read data ----------------------------------------------------------------
+read_data       stage1.data
+
+# --- Force field --------------------------------------------------------------
+# Phase 1: standard lj/cut/coul/long for all pairs (12-6 effective parameters).
+# The Mg 12-6-4 correction (Li-Merz) is applied via hybrid/overlay in the
+# patch section below; disable by commenting out "include mg124_patch.in".
+
+# hybrid/overlay: lj/cut/coul/long carries LJ (all non-Mg-O pairs) + Coulomb (ALL
+# pairs, via PPPM below); the `table` sub-style carries the Li-Merz 12-6-4 for the
+# Mg2+-O pairs ONLY. For those Mg-O pairs the LJ in lj/cut/coul/long is zeroed so the
+# 12-6-4 (which is itself LJ + C4) is not double-counted; Coulomb still applies.
+pair_style      hybrid/overlay lj/cut/coul/long 12.0 table linear 3000
+pair_modify     pair lj/cut/coul/long mix arithmetic tail yes
+
+# Atom type reference:
+#  1=OW  2=HW  3=MG  4=S_so4  5=O_so4  6=C_co3  7=O_co3
+#  8=C_hco3  9=O_hco3_do  10=O_hco3_so  11=O_hco3_oh  12=H_hco3
+#  13=N_nh4  14=H_nh4  15=N_nh3  16=H_nh3
+
+# Self LJ terms for lj/cut/coul/long (cross terms auto-mixed by pair_modify):
+pair_coeff   1  1  lj/cut/coul/long  0.15535  3.16560  # OW-OW      SPC/E
+pair_coeff   2  2  lj/cut/coul/long  0.00000  1.00001  # HW-HW      (no LJ; dummy sig>0)
+pair_coeff   3  3  lj/cut/coul/long  0.00935  2.51440  # MG-MG      background 12-6
+pair_coeff   4  4  lj/cut/coul/long  0.09480  3.55000  # S_so4      [APPROX] Cannon
+pair_coeff   5  5  lj/cut/coul/long  0.12800  3.15000  # O_so4      [APPROX] Cannon
+pair_coeff   6  6  lj/cut/coul/long  0.00000  3.50000  # C_co3      Raiteri (no LJ)
+pair_coeff   7  7  lj/cut/coul/long  0.03700  3.16000  # O_co3      [APPROX] Raiteri
+pair_coeff   8  8  lj/cut/coul/long  0.00000  3.50000  # C_hco3     Raiteri (no LJ)
+pair_coeff   9  9  lj/cut/coul/long  0.03700  3.16000  # O_hco3_do  [APPROX]
+pair_coeff  10 10  lj/cut/coul/long  0.03700  3.16000  # O_hco3_so  [APPROX]
+pair_coeff  11 11  lj/cut/coul/long  0.03700  3.16000  # O_hco3_oh  [APPROX]
+pair_coeff  12 12  lj/cut/coul/long  0.00000  1.00001  # H_hco3     (no LJ)
+pair_coeff  13 13  lj/cut/coul/long  0.17000  3.25000  # N_nh4      [APPROX] OPLS-AA
+pair_coeff  14 14  lj/cut/coul/long  0.00000  1.00001  # H_nh4      (no LJ)
+pair_coeff  15 15  lj/cut/coul/long  0.17000  3.25000  # N_nh3      [APPROX] OPLS-AA
+pair_coeff  16 16  lj/cut/coul/long  0.00000  1.00001  # H_nh3      (no LJ)
+
+# Mg2+-O 12-6-4: zero the LJ in lj/cut/coul/long (Coulomb still applies), add table.
+# Carbonate + bicarbonate oxygens (7,9,10,11) share the MG_OCO3 table section [APPROX].
+pair_coeff   1  3  lj/cut/coul/long  0.00000  1.00001  # Mg-OW        LJ off -> table
+pair_coeff   3  5  lj/cut/coul/long  0.00000  1.00001  # Mg-O_so4     LJ off -> table
+pair_coeff   3  7  lj/cut/coul/long  0.00000  1.00001  # Mg-O_co3     LJ off -> table
+pair_coeff   3  9  lj/cut/coul/long  0.00000  1.00001  # Mg-O_hco3_do LJ off -> table
+pair_coeff   3 10  lj/cut/coul/long  0.00000  1.00001  # Mg-O_hco3_so LJ off -> table
+pair_coeff   3 11  lj/cut/coul/long  0.00000  1.00001  # Mg-O_hco3_oh LJ off -> table
+pair_coeff   1  3  table  mg_o_table.dat  MG_OW
+pair_coeff   3  5  table  mg_o_table.dat  MG_OSO4
+pair_coeff   3  7  table  mg_o_table.dat  MG_OCO3
+pair_coeff   3  9  table  mg_o_table.dat  MG_OCO3
+pair_coeff   3 10  table  mg_o_table.dat  MG_OCO3
+pair_coeff   3 11  table  mg_o_table.dat  MG_OCO3
+
+# --- Electrostatics -----------------------------------------------------------
+kspace_style    pppm 1.0e-5
+kspace_modify   mesh 64 64 64        # will be auto-tuned; override if needed
+
+# --- SHAKE constraints: X-H stretches for water, ammonia, bicarbonate-OH ----------
+# Ammonium NH4+ (bond type 3) is DELIBERATELY EXCLUDED: it's a 5-atom cluster (N + 4H)
+# and LAMMPS fix shake caps clusters at 4 atoms. NH4+ therefore stays flexible, which
+# forces a 1 fs timestep everywhere (see equil/prod below).
+# Constrained bond types: 1=OW-HW, 8=O_hco3_oh-H_hco3, 9=N_nh3-H_nh3
+# Constrained angle type:  1=HW-OW-HW (keeps SPC/E water fully rigid)
+fix             SHAKE all shake 1.0e-4 20 100 b 1 8 9 a 1
+
+# --- Neighbor list ------------------------------------------------------------
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
+# =============================================================================
+# THERMODYNAMIC OUTPUT
+# =============================================================================
+thermo_style    custom step temp press vol density etotal epair ebond eangle
+thermo          1000
+thermo_modify   flush yes
+
+# 'vol' as an equal-style variable so the ave/time fixes can reference v_vol
+# (fix ave/time needs a compute/fix/variable, not the bare thermo keyword).
+variable        vol equal vol
+
+# =============================================================================
+# STAGE 0: Energy minimization
+# =============================================================================
+print ">>> Stage 0: Energy minimization"
+min_style       cg
+minimize        1.0e-6  1.0e-8  10000  100000
+reset_timestep  0
+
+# =============================================================================
+# STAGE 0b: Soft push-off — relieve residual close contacts before thermostatting.
+# The packed box starts strained (high initial pressure); nve/limit caps per-step
+# displacement (0.1 A) so overlapping Mg-O pairs relax without the integrator blowing up.
+# =============================================================================
+print ">>> Stage 0b: push-off (nve/limit, 10 ps)"
+timestep        1.0
+fix             pushoff all nve/limit 0.1
+run             10000
+unfix           pushoff
+reset_timestep  0
+
+# =============================================================================
+# STAGE 1a: NVT heating  300 K -> 343.15 K  (0.5 ns = 500,000 steps @ 1 fs)
+# Use 1 fs timestep initially — safer with divalent ions in close proximity
+# =============================================================================
+print ">>> Stage 1a: NVT heating to 343.15 K"
+timestep        1.0
+
+fix             NVT_heat all nvt temp 300.0 343.15 100.0
+dump            heat_traj all custom 10000 heat.lammpstrj id type x y z
+
+run             500000
+
+unfix           NVT_heat
+undump          heat_traj
+write_restart   stage1_heat.restart      # checkpoint after heating — resume here if a later stage fails
+reset_timestep  0
+
+# =============================================================================
+# STAGE 1b: NPT equilibration  343.15 K, 1 atm  (2 ns = 2,000,000 steps @ 1 fs)
+# 1 fs throughout: ammonium N-H is unconstrained (can't SHAKE a 5-atom cluster).
+# =============================================================================
+print ">>> Stage 1b: NPT equilibration at 343.15 K, 1 atm"
+timestep        1.0
+
+fix             NPT_equil all npt temp 343.15 343.15 200.0 iso 1.0 1.0 2000.0
+dump            equil_traj all custom 10000 equil.lammpstrj id type x y z
+
+# Track box volume to confirm equilibration
+fix             vol_avg all ave/time 1000 1 1000 v_vol file box_volume_equil.dat
+
+run             2000000
+
+unfix           NPT_equil
+unfix           vol_avg
+undump          equil_traj
+reset_timestep  0
+
+# Write equilibrated restart
+write_restart   stage1_equil.restart
+write_data      stage1_equil.data
+
+# =============================================================================
+# STAGE 1c: NPT production  343.15 K, 1 atm  (10 ns = 10,000,000 steps @ 1 fs)
+# =============================================================================
+print ">>> Stage 1c: NPT production run (10 ns)"
+timestep        1.0
+
+fix             NPT_prod all npt temp 343.15 343.15 200.0 iso 1.0 1.0 2000.0
+
+# Trajectory: write every 2 ps (2000 steps @ 1 fs). Native custom/.lammpstrj format
+# (EXTRA-DUMP / dcd not in this build); includes box bounds per frame (NPT-safe).
+dump            prod_traj all custom 2000 stage1_prod.lammpstrj id type x y z
+
+# Coordination analysis outputs (atom positions for post-processing with MDAnalysis)
+dump            prod_xyz all xyz 20000 stage1_prod.xyz
+dump_modify     prod_xyz element O H Mg S O C O C O O O H N H N H
+
+# Thermodynamic averages
+fix             thermo_avg all ave/time 1000 1 1000 &
+                    c_thermo_temp c_thermo_press v_vol &
+                    file thermo_prod.dat
+
+run             10000000
+
+unfix           NPT_prod
+unfix           thermo_avg
+undump          prod_traj
+undump          prod_xyz
+
+write_restart   stage1_prod_final.restart
+write_data      stage1_prod_final.data
+
+print ">>> Stage 1 complete. Final files:"
+print "    stage1_prod_final.data  (coordinate snapshot)"
+print "    stage1_prod.dcd         (full trajectory)"
+print "    thermo_prod.dat         (T, P, V averages)"
+
+# =============================================================================
+# NOTE: Mg 12-6-4 correction patch
+# =============================================================================
+# To activate the Li-Merz 12-6-4 potential for Mg-O interactions, run instead:
+#
+#   lmp -in stage1_mg124_patch.in -pk kokkos -k on g 1 -sf kk
+#
+# That script reads stage1_equil.restart and re-runs production with the
+# tabulated pair potential overrides for types 3-1, 3-5, 3-7, 3-9, 3-10, 3-11.
+# Build the table first: python build_topology.py  (generates mg_o_table.dat)
+# =============================================================================

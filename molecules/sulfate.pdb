@@ -1,0 +1,8 @@
+REMARK Sulfate SO4 2-  (Cannon et al. 2014)
+REMARK Tetrahedral: S-O = 1.49 A
+ATOM      1  S   SO4     1       0.000   0.000   0.000  1.00  0.00           S
+ATOM      2  O1  SO4     1       0.860   0.860   0.860  1.00  0.00           O
+ATOM      3  O2  SO4     1       0.860  -0.860  -0.860  1.00  0.00           O
+ATOM      4  O3  SO4     1      -0.860   0.860  -0.860  1.00  0.00           O
+ATOM      5  O4  SO4     1      -0.860  -0.860   0.860  1.00  0.00           O
+END

@@ -1,0 +1,5 @@
+REMARK SPC/E water  r(OH)=1.0 A  angle=109.47 deg
+ATOM      1  OW  SOL     1       0.000   0.000   0.000  1.00  0.00           O
+ATOM      2  HW1 SOL     1       1.000   0.000   0.000  1.00  0.00           H
+ATOM      3  HW2 SOL     1      -0.333   0.943   0.000  1.00  0.00           H
+END
